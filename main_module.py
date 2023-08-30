@@ -44,9 +44,9 @@ async def main_data(message):
 
 async def candle_stick_data(ticks):
     url = "wss://stream.binance.com:9443/ws/"  # steam address
-    if ticks[0].split('@')[-1] == 'kline_3m':
-        first_pair = "xprusdt@kline_1s"  # first pair
-    first_pair = "xprusdt@ticker"  # first pair
+    # if ticks[0].split('@')[-1] == 'kline_3m':
+    first_pair = "xprusdt@kline_3m"  # first pair
+    # first_pair = "xprusdt@ticker"  # first pair
     async for sock in websockets.connect(url + first_pair) :
         send_connection_res(f'МОДУЛЬ 1 ЗАПУЩЕН')
 
