@@ -8,7 +8,7 @@ def get_tickers():
     for item in data:
         symbol = item["symbol"]
         if symbol.endswith("USDT"):
-            usdt_pairs.append(symbol.lower() + "@kline_1s")
+            usdt_pairs.append(symbol.lower() + "@kline_3m")
 
     return usdt_pairs
 
