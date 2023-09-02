@@ -29,7 +29,6 @@ async def main_data(message):
         if pair_state[symbol] == 'Deal':
             state_tracker(symbol, price, volume, timestamp)
             return None
-        day_data(timestamp, symbol, price)
         impulse = round(((price - open_price) / open_price) * 100, 4)
         print(symbol)
         print(impulse)
