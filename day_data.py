@@ -32,7 +32,7 @@ def day_data(timestamp, symbol, price):
     max_price = df['high'].max()
 
     range_of_day = round(((max_price - min_price) / min_price) * 100, 2)
-
+    buy_order(symbol, price, timestamp)
     if range_of_day > 6:
         return None
 

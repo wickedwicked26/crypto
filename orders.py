@@ -1,7 +1,8 @@
+from datetime import timedelta, datetime
+
 from binance import Client
 from state import pair_state, start_deal_price, pair_day_volume, deal_time, usdt_balance
-from telegram_message import send_graph, path
-from graphs import start_graph, finish_graph
+from telegram_message import send_graph, send_message
 import os
 from config import client
 
@@ -26,9 +27,11 @@ def buy_order(symbol, price, timestamp):
     start_deal_price[symbol] = price
     deal_time[symbol] = timestamp
 
-    start_graph(symbol, timestamp)
-    send_graph(symbol, timestamp, f'DEAL STARTED\nPRICE : {price}\nTIMESTAMP: {timestamp}')
-    os.remove(f'{symbol}_{timestamp}.png')
+    send_message(
+        f'{symbol} : DEAL STARTED\n'
+        f'PRICE : {price}\n'
+        f'TIMESTAMP: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
+
 
 
 def sell_order(symbol, price, timestamp):
@@ -42,12 +45,11 @@ def sell_order(symbol, price, timestamp):
     #     quantity=str(quantity)
     # )
 
-    finish_graph(symbol, timestamp, deal_time[symbol])
-    send_graph(symbol, timestamp, f'DEAL FINISHED\n'
-                                  f'RESULT: {((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100}%\n'
-                                  f'DEAL STARTED: {start_deal_price[symbol]}\n'
-                                  f'DEAL FINISHED: {timestamp}\n')
+    send_message(f'{symbol} : DEAL FINISHED\n'
+                 f'RESULT: {((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100}%\n'
+                 f'DEAL START PRICE: {start_deal_price[symbol]}\n'
+                 f'DEAL END PRICE: {price}\n'
+                 f'DEAL FINISHED: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
     pair_state[symbol] = 'Not in deal'
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
-    os.remove(f'{symbol}_{timestamp}.png')

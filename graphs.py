@@ -7,7 +7,7 @@ from config import client
 
 
 def start_graph(symbol, timestamp):
-    klines = client.get_historical_klines(symbol=symbol, interval='1m',
+    klines = client.get_historical_klines(symbol=symbol, interval='3m',
                                           start_str=f'{datetime.strptime(timestamp, "%Y-%m-%d %H:%M") - timedelta(hours=4)}',
                                           end_str=f'{timestamp}')
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -43,8 +43,8 @@ def start_graph(symbol, timestamp):
 
 def finish_graph(symbol, timestamp, start_deal_timestamp):
     client = Client()
-    klines = client.get_historical_klines(symbol=symbol, interval='1m',
-                                          start_str=f'{start_deal_timestamp}',
+    klines = client.get_historical_klines(symbol=symbol, interval='3m',
+                                          start_str=f'{datetime.strptime(timestamp, "%Y-%m-%d %H:%M") - timedelta(hours=4)}',
                                           end_str=f'{timestamp}')
     data = pd.DataFrame(klines, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
                                          'quote_asset_volume', 'number_of_trades', 'taker_buy_base_asset_volume',

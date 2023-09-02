@@ -8,9 +8,7 @@ from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
 
-ticks = get_tickers()[2:302]
-# ticks1 = get_tickers()[302:]
-day_tick = get_volume()[:2]
+ticks = get_tickers()[:2]
 
 
 async def main_data(message):
@@ -31,7 +29,6 @@ async def main_data(message):
         if pair_state[symbol] == 'Deal':
             state_tracker(symbol, price, volume, timestamp)
             return None
-
         impulse = round(((price - open_price) / open_price) * 100, 4)
 
         if impulse > 10:
@@ -42,16 +39,16 @@ async def main_data(message):
         pass
 
 
-async def candle_stick_data(ticks):
+async def candle_stick_data(ticker):
     url = "wss://stream.binance.com:9443/ws/"  # steam address
     # if ticks[0].split('@')[-1] == 'kline_3m':
     first_pair = "xprusdt@kline_3m"  # first pair
     # first_pair = "xprusdt@ticker"  # first pair
-    async for sock in websockets.connect(url + first_pair) :
+    async for sock in websockets.connect(url + first_pair):
         send_connection_res(f'МОДУЛЬ 1 ЗАПУЩЕН')
 
         try:
-            pairs = {'method': 'SUBSCRIBE', 'params': ticks, 'id': 1}  # other pairs
+            pairs = {'method': 'SUBSCRIBE', 'params': ticker, 'id': 1}  # other pairs
             json_subm = json.dumps(pairs)
             await sock.send(json_subm)
 
