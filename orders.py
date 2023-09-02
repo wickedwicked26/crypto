@@ -33,7 +33,6 @@ def buy_order(symbol, price, timestamp):
         f'TIMESTAMP: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
 
 
-
 def sell_order(symbol, price, timestamp):
     # total_amount_usd = 10_000
     # quantity = total_amount_usd / price
