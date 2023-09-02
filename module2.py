@@ -30,8 +30,7 @@ async def main_data(message):
             state_tracker(symbol, price, volume, timestamp)
             return None
         impulse = round(((price - open_price) / open_price) * 100, 4)
-        print(symbol)
-        print(impulse)
+       
         if impulse > 10:
             day_data(timestamp, symbol, price)
 
@@ -41,7 +40,6 @@ async def main_data(message):
 
 
 async def candle_stick_data(tickers):
-    print(len(tickers))
     url = "wss://stream.binance.com:9443/ws/"  # steam address
     # if ticks[0].split('@')[-1] == 'kline_3m':
     first_pair = "xprusdt@kline_3m"  # first pair

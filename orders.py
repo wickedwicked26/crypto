@@ -48,6 +48,7 @@ def sell_order(symbol, price, timestamp):
                  f'RESULT: {((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100}%\n'
                  f'DEAL START PRICE: {start_deal_price[symbol]}\n'
                  f'DEAL END PRICE: {price}\n'
+                 f'DEAL START : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}'
                  f'DEAL FINISHED: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
     pair_state[symbol] = 'Not in deal'
     start_deal_price[symbol] = 0
