@@ -1,7 +1,8 @@
+import csv
 from datetime import timedelta, datetime
 
 from binance import Client
-from state import pair_state, start_deal_price, pair_day_volume, deal_time, usdt_balance
+from state import pair_state, start_deal_price, pair_day_volume, deal_time, usdt_balance, last_deal_time
 from telegram_message import send_graph, send_message
 import os
 from config import client
@@ -43,13 +44,24 @@ def sell_order(symbol, price, timestamp):
     #     type=Client.ORDER_TYPE_MARKET,
     #     quantity=str(quantity)
     # )
-
+    deal_result = ((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100
     send_message(f'{symbol} : DEAL FINISHED\n'
-                 f'RESULT: {((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100}%\n'
+                 f'RESULT: {deal_result}%\n'
                  f'DEAL START PRICE: {start_deal_price[symbol]}\n'
                  f'DEAL END PRICE: {price}\n'
                  f'DEAL START : {datetime.strptime(deal_time[symbol], "%Y-%m-%d %H:%M") + timedelta(hours=3)}'
                  f'DEAL FINISHED: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
+    with open('data_base.csv', 'a') as file:
+        writer = csv.writer(file)
+        writer.writerow((
+            symbol,
+            deal_time[symbol],
+            start_deal_price[symbol],
+            timestamp,
+            price,
+            deal_result
+        ))
     pair_state[symbol] = 'Not in deal'
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
+    last_deal_time[symbol] = timestamp

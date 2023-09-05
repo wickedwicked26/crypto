@@ -10,6 +10,7 @@ def state_tracker(symbol, price, volume, timestamp):
         return None
 
     price_difference = round(((deal_high[symbol] - price) / price) * 100, 4)
+    # print(f'price:{price} high:{deal_high[symbol]} diff: {price_difference}')
 
     if price_difference > 6.5:
         sell_order(symbol, price, timestamp)
