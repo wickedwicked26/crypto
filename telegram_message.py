@@ -3,7 +3,7 @@ from config import telegram_token
 
 bot = telebot.TeleBot(telegram_token)
 
-chat_ids = [5442883627, '1934151160']
+chat_ids = [5442883627]
 
 
 def send_graph(symbol, timestamp, message):
