@@ -1,7 +1,7 @@
 import csv
 from datetime import timedelta, datetime
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, \
-    balance
+    balance, half_quantity
 from telegram_message import send_graph, send_message
 from config import client
 
@@ -74,6 +74,7 @@ def sell_order(symbol, price, timestamp):
             deal_result
         ))
     pair_state[symbol] = 'Not in deal'
+    half_quantity[symbol] = 'No'
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
     last_deal_time[symbol] = timestamp
@@ -85,7 +86,7 @@ def sell_half_order(symbol, price, timestamp):
     tick_balance[symbol] = (tick_balance[symbol] / 2, 4)
     balance['balance'] += round(quantity * price, 4)
     deal_result = round(((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100, 4)
-
+    half_quantity[symbol] = 'Yes'
     # order = client.create_order(
     #     symbol=symbol,
     #     side=Client.SIDE_SELL,

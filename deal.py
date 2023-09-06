@@ -1,5 +1,5 @@
 import pandas as pd
-from state import start_deal_price, deal_high
+from state import start_deal_price, deal_high, half_quantity
 from orders import sell_order, sell_half_order
 
 
@@ -11,7 +11,10 @@ def state_tracker(symbol, price, volume, timestamp):
         sell_order(symbol, price, timestamp)
         return None
     if round(((start_deal_price[symbol] - price) / price) * 100, 4) >= 10:
+        if half_quantity[symbol] == 'Yes':
+            return None
         sell_half_order(symbol, price, timestamp)
+        return None
 
     price_difference = round(((deal_high[symbol] - price) / price) * 100, 4)
 

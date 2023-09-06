@@ -9,6 +9,7 @@ tick_balance = {}
 deal_high = {}
 last_deal_time = {}
 balance = {}
+half_quantity = {}
 
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()
@@ -48,6 +49,12 @@ for item in data:
     symbol = item["symbol"]
     if symbol.endswith("USDT"):
         tick_balance[symbol] = 0
+
+
+for item in data:
+    symbol = item["symbol"]
+    if symbol.endswith("USDT"):
+        half_quantity[symbol] = 'No'
 
 
 balance['balance'] = 10_000
