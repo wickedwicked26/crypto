@@ -8,7 +8,7 @@ from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
 
-ticks = get_tickers()[2:302]
+ticks = get_tickers()[:1]
 
 
 async def main_data(message):
@@ -29,8 +29,10 @@ async def main_data(message):
         if pair_state[symbol] == 'Deal':
             state_tracker(symbol, price, volume, timestamp)
             return None
+
         if timestamp == last_deal_time[symbol]:
             return None
+
         impulse = round(((price - open_price) / open_price) * 100, 4)
 
         if impulse > 10:
@@ -73,4 +75,5 @@ if __name__ == '__main__':
 
         asyncio.run(main())
     except Exception as exp:
+        print(exp)
         send_error(f'ВОЗНИКЛА ОШИБКА В МОДУЛЕ 1: {exp}. МОДУЛЬ ОСТАНОВЛЕН.')
