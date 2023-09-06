@@ -8,7 +8,7 @@ from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
 
-ticks = get_tickers()[:1]
+ticks = get_tickers()[2:302]
 
 
 async def main_data(message):
