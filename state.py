@@ -4,10 +4,9 @@ pair_state = {}
 start_deal_price = {}
 pair_day_volume = {}
 deal_time = {}
-usdt_balance = 0
+tick_balance = 0
 deal_high = {}
 last_deal_time = {}
-
 
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()
