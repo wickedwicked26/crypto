@@ -1,34 +1,28 @@
 import csv
 from datetime import timedelta, datetime
-from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, \
-    balance, half_quantity
-from telegram_message import send_graph, send_message
+from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
+    usdt_start_deal_balance
+from telegram_message import send_message
 from config import client
 
 
 def buy_order(symbol, price, timestamp):
-    total_amount_usd = 10_000
+    total_amount_usd = 100
     quantity = total_amount_usd / price
 
-    tick_balance[symbol] = total_amount_usd / price
-    balance['balance'] -= total_amount_usd
-    # account_info = client.get_account()
-    #
-    # for balance in account_info['balances']:
-    #     if balance['asset'] == 'USDT':
-    #         usdt_balance = float(balance['free'])
+    usdt_balance = float(client.get_asset_balance('USDT')['free'])
+    usdt_start_deal_balance['balance'] = usdt_balance
 
-    #         break
-    # order = client.create_order(
-    #     symbol=symbol,
-    #     side=Client.SIDE_BUY,
-    #     type=Client.ORDER_TYPE_MARKET,
-    #     quantity=quantity
-    # )
-    # account_info = client.get_account()
-    # for balance in account_info['balances']:
-    #     if balance['asset'] == f'{symbol[:-4]}':
-    #         tick_balance[symbol] = float(balance['free'])
+    order = client.create_order(
+        symbol=symbol,
+        side=client.SIDE_BUY,
+        type=client.ORDER_TYPE_MARKET,
+        quantity=str(quantity)
+    )
+
+    symb_balance = float(client.get_asset_balance(f'{symbol[:-4]}')['free'])
+    tick_balance[symbol] = symb_balance
+
     pair_state[symbol] = 'Deal'
     start_deal_price[symbol] = price
     deal_time[symbol] = timestamp
@@ -38,26 +32,25 @@ def buy_order(symbol, price, timestamp):
         f'PRICE : {price}\n'
         f'TIMESTAMP: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
         f'{symbol} QUANTITY : {tick_balance[symbol]}\n'
-        f'USDT BALANCE : {balance["balance"]}\n'
+        f'USDT BALANCE : {usdt_balance - 100}\n'
     )
 
 
 def sell_order(symbol, price, timestamp):
-    # total_amount_usd = 10_000
     quantity = tick_balance[symbol]
-    #
-    # order = client.create_order(
-    #     symbol=symbol,
-    #     side=Client.SIDE_SELL,
-    #     type=Client.ORDER_TYPE_MARKET,
-    #     quantity=str(quantity)
-    # )
-    balance['balance'] += round(quantity * price, 4)
-    deal_result = round(((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100, 4)
+
+    order = client.create_order(
+        symbol=symbol,
+        side=client.SIDE_SELL,
+        type=client.ORDER_TYPE_MARKET,
+        quantity=str(quantity)
+    )
+    usdt_balance = float(client.get_asset_balance('USDT')['free'])
+    start_balance = usdt_start_deal_balance["balance"]
+    usdt_change = round(((usdt_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
-                 f'USDT BALANCE : {balance["balance"]}\n'
-                 f'USDT BALANCE CHANGE : {round(((balance["balance"] - 10_000) / 10_000) * 100, 4)}\n'
-                 f'RESULT: {deal_result}%\n'
+                 f'USDT BALANCE : {usdt_balance}\n'
+                 f'USDT CHANGE : {usdt_change}%\n'
                  f'DEAL START PRICE: {start_deal_price[symbol]}\n'
                  f'DEAL END PRICE: {price}\n'
                  f'DEAL START : {datetime.strptime(deal_time[symbol], "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
@@ -71,7 +64,7 @@ def sell_order(symbol, price, timestamp):
             start_deal_price[symbol],
             timestamp,
             price,
-            deal_result
+            usdt_change
         ))
     pair_state[symbol] = 'Not in deal'
     half_quantity[symbol] = 'No'
@@ -79,21 +72,25 @@ def sell_order(symbol, price, timestamp):
     deal_time[symbol] = 0
     last_deal_time[symbol] = timestamp
     tick_balance[symbol] = 0
+    usdt_start_deal_balance['balance'] = 0
+    deal_high[symbol] = 0
 
 
 def sell_half_order(symbol, price, timestamp):
     quantity = tick_balance[symbol] / 2
-    tick_balance[symbol] = (tick_balance[symbol] / 2, 4)
-    balance['balance'] += round(quantity * price, 4)
+
+    order = client.create_order(
+        symbol=symbol,
+        side=client.SIDE_SELL,
+        type=client.ORDER_TYPE_MARKET,
+        quantity=str(quantity)
+    )
+
+    symb_balance = float(client.get_asset_balance(f'{symbol[:-4]}')['free'])
+    tick_balance[symbol] = symb_balance
+
     deal_result = round(((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100, 4)
     half_quantity[symbol] = 'Yes'
-    # order = client.create_order(
-    #     symbol=symbol,
-    #     side=Client.SIDE_SELL,
-    #     type=Client.ORDER_TYPE_MARKET,
-    #     quantity=str(quantity)
-    # )
     send_message(f'{symbol} : HALF QUANTITY SOLD\n'
-                 f'USDT BALANCE : {balance["balance"]}\n'
-                 f'RESULT: {deal_result}%\n'
+                 f'PRICE GROW: {deal_result}%\n'
                  f'TIMESTAMP : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
