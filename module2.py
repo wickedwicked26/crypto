@@ -3,7 +3,7 @@ import pandas as pd
 import websockets
 import json
 from usdt_tickers import get_tickers, get_volume
-from state import pair_state, pair_day_volume, last_deal_time
+from state import pair_state, last_deal_time
 from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
@@ -14,9 +14,6 @@ ticks1 = get_tickers()[302:]
 async def main_data(message):
     try:
         data = json.loads(message)
-        if data['e'] == '24hrTicker':
-            pair_day_volume[data['s']] = data['q']
-            return None
 
         df = pd.json_normalize(data, sep='_')
         df['E'] = pd.to_datetime(df['E'], unit='ms').dt.strftime('%Y-%m-%d %H:%M')
@@ -32,7 +29,7 @@ async def main_data(message):
         if timestamp == last_deal_time[symbol]:
             return None
         impulse = round(((price - open_price) / open_price) * 100, 4)
-       
+
         if impulse > 10:
             day_data(timestamp, symbol, price)
 
