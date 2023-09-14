@@ -1,26 +1,25 @@
 import csv
 from datetime import timedelta, datetime
+import requests
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
-    usdt_start_deal_balance
+    usdt_start_deal_balance, tick_step_size
 from telegram_message import send_message
 from config import client
+from decimal import Decimal
+from binance.helpers import round_step_size
 
 
 def buy_order(symbol, price, timestamp):
-    total_amount_usd = 100
-    quantity = total_amount_usd / price
+    total_amount_usd = 10
+    # usdt_balance = float(client.get_asset_balance('USDT')['free'])
+    # usdt_start_deal_balance['balance'] = usdt_balance
 
-    usdt_balance = float(client.get_asset_balance('USDT')['free'])
-    usdt_start_deal_balance['balance'] = usdt_balance
-
-    order = client.create_order(
+    order = client.order_market_buy(
         symbol=symbol,
-        side=client.SIDE_BUY,
-        type=client.ORDER_TYPE_MARKET,
-        quantity=str(quantity)
+        quoteOrderQty=total_amount_usd,
     )
 
-    symb_balance = float(client.get_asset_balance(f'{symbol[:-4]}')['free'])
+    symb_balance = Decimal(client.get_asset_balance(f'{symbol[:-4]}')['free'])
     tick_balance[symbol] = symb_balance
 
     pair_state[symbol] = 'Deal'
@@ -32,21 +31,32 @@ def buy_order(symbol, price, timestamp):
         f'PRICE : {price}\n'
         f'TIMESTAMP: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
         f'{symbol} QUANTITY : {tick_balance[symbol]}\n'
-        f'USDT BALANCE : {usdt_balance - 100}\n'
+        f'{total_amount_usd}$ DEAL\n'
     )
 
 
 def sell_order(symbol, price, timestamp):
-    quantity = tick_balance[symbol]
+    symb_balance = tick_balance[symbol]
+    step_size = 0
+    url = f'https://api.binance.com/api/v1/exchangeInfo'
+    response = requests.get(url)
+    data = response.json()
+    step_size = 0
+    for symbol_info in data['symbols']:
+        if symbol_info['symbol'] == symbol:
+            for filter_item in symbol_info['filters']:
+                if filter_item['filterType'] == 'LOT_SIZE':
+                    step_size = Decimal(filter_item['stepSize'])
 
-    order = client.create_order(
+    quantity = round_step_size(symb_balance, step_size)
+
+    order = client.order_market_sell(
         symbol=symbol,
-        side=client.SIDE_SELL,
-        type=client.ORDER_TYPE_MARKET,
-        quantity=str(quantity)
+        quantity=quantity
     )
-    usdt_balance = float(client.get_asset_balance('USDT')['free'])
-    start_balance = usdt_start_deal_balance["balance"]
+    usdt_start_deal_balance['balance'] += float(order['cummulativeQuoteQty'])
+    usdt_balance = usdt_start_deal_balance['balance']
+    start_balance = 10
     usdt_change = round(((usdt_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
                  f'USDT BALANCE : {usdt_balance}\n'
@@ -77,16 +87,26 @@ def sell_order(symbol, price, timestamp):
 
 
 def sell_half_order(symbol, price, timestamp):
-    quantity = tick_balance[symbol] / 2
+    symb_balance = tick_balance[symbol] / Decimal(2)
+    step_size = 0
+    url = f'https://api.binance.com/api/v1/exchangeInfo'
+    response = requests.get(url)
+    data = response.json()
+    step_size = 0
+    for symbol_info in data['symbols']:
+        if symbol_info['symbol'] == symbol:
+            for filter_item in symbol_info['filters']:
+                if filter_item['filterType'] == 'LOT_SIZE':
+                    step_size = Decimal(filter_item['stepSize'])
 
-    order = client.create_order(
+    quantity = round_step_size(symb_balance, step_size)
+
+    order = client.order_market_sell(
         symbol=symbol,
-        side=client.SIDE_SELL,
-        type=client.ORDER_TYPE_MARKET,
-        quantity=str(quantity)
+        quantity=quantity
     )
-
-    symb_balance = float(client.get_asset_balance(f'{symbol[:-4]}')['free'])
+    usdt_start_deal_balance['balance'] += float(order['cummulativeQuoteQty'])
+    symb_balance = Decimal(client.get_asset_balance(f'{symbol[:-4]}')['free'])
     tick_balance[symbol] = symb_balance
 
     deal_result = round(((price - start_deal_price[symbol]) / start_deal_price[symbol]) * 100, 4)
@@ -94,3 +114,6 @@ def sell_half_order(symbol, price, timestamp):
     send_message(f'{symbol} : HALF QUANTITY SOLD\n'
                  f'PRICE GROW: {deal_result}%\n'
                  f'TIMESTAMP : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
+
+
+print(tick_step_size)
