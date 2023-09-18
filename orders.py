@@ -2,7 +2,7 @@ import csv
 from datetime import timedelta, datetime
 import requests
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
-    usdt_start_deal_balance, tick_step_size
+    usdt_start_deal_balance
 from telegram_message import send_message
 from config import client
 from decimal import Decimal
@@ -116,4 +116,3 @@ def sell_half_order(symbol, price, timestamp):
                  f'TIMESTAMP : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
 
 
-print(tick_step_size)

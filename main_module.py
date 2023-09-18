@@ -33,7 +33,7 @@ async def main_data(message):
 
         impulse = round(((price - open_price) / open_price) * 100, 4)
 
-        if impulse > 10:
+        if impulse > 9:
             day_data(timestamp, symbol, price)
 
 
