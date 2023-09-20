@@ -1,8 +1,9 @@
 import csv
+import json
 from datetime import timedelta, datetime
 import requests
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
-    usdt_start_deal_balance
+    usdt_start_deal_balance, step_sizes
 from telegram_message import send_message
 from config import client
 from decimal import Decimal
@@ -37,19 +38,8 @@ def buy_order(symbol, price, timestamp):
 
 def sell_order(symbol, price, timestamp):
     symb_balance = tick_balance[symbol]
-    step_size = 0
-    url = f'https://api.binance.com/api/v1/exchangeInfo'
-    response = requests.get(url)
-    data = response.json()
-    step_size = 0
-    for symbol_info in data['symbols']:
-        if symbol_info['symbol'] == symbol:
-            for filter_item in symbol_info['filters']:
-                if filter_item['filterType'] == 'LOT_SIZE':
-                    step_size = Decimal(filter_item['stepSize'])
-
+    step_size = step_sizes[symbol]
     quantity = round_step_size(symb_balance, step_size)
-
     order = client.order_market_sell(
         symbol=symbol,
         quantity=quantity
@@ -88,17 +78,7 @@ def sell_order(symbol, price, timestamp):
 
 def sell_half_order(symbol, price, timestamp):
     symb_balance = tick_balance[symbol] / Decimal(2)
-    step_size = 0
-    url = f'https://api.binance.com/api/v1/exchangeInfo'
-    response = requests.get(url)
-    data = response.json()
-    step_size = 0
-    for symbol_info in data['symbols']:
-        if symbol_info['symbol'] == symbol:
-            for filter_item in symbol_info['filters']:
-                if filter_item['filterType'] == 'LOT_SIZE':
-                    step_size = Decimal(filter_item['stepSize'])
-
+    step_size = step_sizes[symbol]
     quantity = round_step_size(symb_balance, step_size)
 
     order = client.order_market_sell(
@@ -114,5 +94,3 @@ def sell_half_order(symbol, price, timestamp):
     send_message(f'{symbol} : HALF QUANTITY SOLD\n'
                  f'PRICE GROW: {deal_result}%\n'
                  f'TIMESTAMP : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
-
-
