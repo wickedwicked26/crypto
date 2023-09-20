@@ -15,7 +15,6 @@ async def main_data(message):
     try:
         data = json.loads(message)
 
-
         df = pd.json_normalize(data, sep='_')
         df['E'] = pd.to_datetime(df['E'], unit='ms').dt.strftime('%Y-%m-%d %H:%M')
 
@@ -35,7 +34,6 @@ async def main_data(message):
 
         if impulse > 9:
             day_data(timestamp, symbol, price)
-
 
     except KeyError:
         pass
