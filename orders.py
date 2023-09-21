@@ -84,6 +84,7 @@ def sell_order(symbol, price, timestamp):
     tick_balance[symbol] = 0
     usdt_start_deal_balance['balance'] = 0
     deal_high[symbol] = 0
+    usdt_deal_state[symbol] = 0
 
 
 def sell_half_order(symbol, price, timestamp):
