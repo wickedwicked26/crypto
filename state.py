@@ -9,7 +9,6 @@ deal_high = {}
 last_deal_time = {}
 usdt_start_deal_balance = {}
 half_quantity = {}
-step_sizes = {}
 
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()
@@ -51,15 +50,6 @@ for item in data:
 
 usdt_start_deal_balance['balance'] = 0
 
-url = f'https://api.binance.com/api/v1/exchangeInfo'
-response = requests.get(url)
 
-data = response.json()
-step_size = 0
-for symbol_info in data['symbols']:
-    if symbol_info['symbol'].endswith('USDT'):
-        symbol = symbol_info['symbol']
-        for filter_item in symbol_info['filters']:
-            if filter_item['filterType'] == 'LOT_SIZE':
-                step_sizes[symbol] = filter_item['stepSize']
+
 
