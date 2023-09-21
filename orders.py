@@ -2,7 +2,7 @@ import csv
 from datetime import timedelta, datetime
 import requests
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
-    usdt_start_deal_balance
+    usdt_start_deal_balance, usdt_deal_state
 from telegram_message import send_message
 from config import client
 from decimal import Decimal
@@ -54,8 +54,8 @@ def sell_order(symbol, price, timestamp):
         symbol=symbol,
         quantity=quantity
     )
-    usdt_start_deal_balance['balance'] += float(order['cummulativeQuoteQty'])
-    usdt_balance = usdt_start_deal_balance['balance']
+    usdt_deal_state[symbol] += float(order['cummulativeQuoteQty'])
+    usdt_balance = usdt_deal_state[symbol]
     start_balance = 10
     usdt_change = round(((usdt_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
@@ -105,7 +105,7 @@ def sell_half_order(symbol, price, timestamp):
         symbol=symbol,
         quantity=quantity
     )
-    usdt_start_deal_balance['balance'] += float(order['cummulativeQuoteQty'])
+    usdt_deal_state[symbol] += float(order['cummulativeQuoteQty'])
     symb_balance = Decimal(client.get_asset_balance(f'{symbol[:-4]}')['free'])
     tick_balance[symbol] = symb_balance
 
