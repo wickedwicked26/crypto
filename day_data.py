@@ -16,6 +16,8 @@ def day_data(timestamp, symbol, price):
                                'number_of_trades', 'taker_buy_base_asset_volume',
                                'taker_buy_quote_asset_volume',
                                'ignore'])
+    if len(df) < 1:
+        return None
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     df['low'] = pd.to_numeric(df['low'], errors='coerce')
     df['high'] = pd.to_numeric(df['high'], errors='coerce')
