@@ -89,7 +89,6 @@ def sell_order(symbol, price, timestamp):
 
 def sell_half_order(symbol, price, timestamp):
     symb_balance = tick_balance[symbol] / Decimal(2)
-    step_size = 0
     url = f'https://api.binance.com/api/v1/exchangeInfo'
     response = requests.get(url)
     data = response.json()
@@ -115,4 +114,3 @@ def sell_half_order(symbol, price, timestamp):
     send_message(f'{symbol} : HALF QUANTITY SOLD\n'
                  f'PRICE GROW: {deal_result}%\n'
                  f'TIMESTAMP : {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}')
-

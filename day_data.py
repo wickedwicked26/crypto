@@ -3,6 +3,7 @@ from binance import Client
 import pandas as pd
 from orders import buy_order
 from config import client
+from state import last_deal_open
 
 
 def day_data(timestamp, symbol, price):
@@ -17,6 +18,7 @@ def day_data(timestamp, symbol, price):
                                'taker_buy_quote_asset_volume',
                                'ignore'])
     if len(df) <= 1:
+        last_deal_open[symbol] = 0
         return None
     df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
     df['low'] = pd.to_numeric(df['low'], errors='coerce')
@@ -36,9 +38,11 @@ def day_data(timestamp, symbol, price):
     range_of_day = round(((max_price - min_price) / min_price) * 100, 2)
 
     if range_of_day > 6:
+        last_deal_open[symbol] = 0
         return None
 
     if max_price > price:
+        last_deal_open[symbol] = 0
         return None
 
     buy_order(symbol, price, timestamp)

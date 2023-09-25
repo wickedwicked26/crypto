@@ -10,6 +10,7 @@ last_deal_time = {}
 usdt_start_deal_balance = {}
 half_quantity = {}
 usdt_deal_state = {}
+last_deal_open = {}
 
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()
@@ -54,9 +55,9 @@ for item in data:
     if symbol.endswith("USDT"):
         usdt_deal_state[symbol] = 0
 
+for item in data:
+    symbol = item['symbol']
+    if symbol.endswith("USDT"):
+        last_deal_open[symbol] = 0
 
 usdt_start_deal_balance['balance'] = 0
-
-
-
-
