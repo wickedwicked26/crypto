@@ -1,6 +1,7 @@
 import requests
 from config import client
 
+usdt_balance = {}
 pair_state = {}
 start_deal_price = {}
 deal_time = {}
@@ -60,5 +61,8 @@ for item in data:
     symbol = item['symbol']
     if symbol.endswith("USDT"):
         last_deal_open[symbol] = 0
+
+usdt_balance['balance'] = float(client.get_asset_balance('USDT')['free'])
+
 
 usdt_start_deal_balance['balance'] = 0

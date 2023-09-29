@@ -2,7 +2,7 @@ import csv
 from datetime import timedelta, datetime
 import requests
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
-    usdt_start_deal_balance, usdt_deal_state, deal
+    usdt_start_deal_balance, usdt_deal_state, deal, usdt_balance
 from telegram_message import send_message
 from config import client
 from decimal import Decimal
@@ -11,12 +11,12 @@ from binance.helpers import round_step_size
 
 def buy_order(symbol, price, timestamp):
 
-    usdt_balance = float(client.get_asset_balance('USDT')['free'])
+    usdt_bal = usdt_balance['balance']
     total_amount_usd = 0
-    if usdt_balance >= 1_000:
+    if usdt_bal >= 1_000:
         total_amount_usd = 1_000
     else:
-        total_amount_usd = usdt_balance
+        total_amount_usd = usdt_bal
     usdt_start_deal_balance['balance'] = total_amount_usd
 
     order = client.order_market_buy(
@@ -61,12 +61,12 @@ def sell_order(symbol, price, timestamp):
         quantity=quantity
     )
     usdt_deal_state[symbol] += float(order['cummulativeQuoteQty'])
-    usdt_balance = usdt_deal_state[symbol]
+    final_balance = usdt_deal_state[symbol]
     start_balance = usdt_start_deal_balance['balance']
-    usdt_change = round(((usdt_balance - start_balance) / start_balance) * 100, 4)
+    usdt_change = round(((final_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
-                 f'USDT BALANCE : {usdt_balance}\n'
-                 f'USDT CHANGE : {usdt_change}%\n'
+                 f'USDT BALANCE : {final_balance}\n'
+                 
                  f'DEAL START PRICE: {start_deal_price[symbol]}\n'
                  f'DEAL END PRICE: {price}\n'
                  f'DEAL START : {datetime.strptime(deal_time[symbol], "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
@@ -93,5 +93,6 @@ def sell_order(symbol, price, timestamp):
     usdt_start_deal_balance['balance'] = 0
     deal_high[symbol] = 0
     usdt_deal_state[symbol] = 0
+    usdt_balance['balance'] = float(client.get_asset_balance('USDT')['free'])
 
 
