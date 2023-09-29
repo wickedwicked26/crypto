@@ -65,8 +65,7 @@ def sell_order(symbol, price, timestamp):
     start_balance = usdt_start_deal_balance['balance']
     usdt_change = round(((final_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
-                 f'USDT BALANCE : {final_balance}\n'
-                 
+                 f'USDT CHANGE : {usdt_change}%\n'
                  f'DEAL START PRICE: {start_deal_price[symbol]}\n'
                  f'DEAL END PRICE: {price}\n'
                  f'DEAL START : {datetime.strptime(deal_time[symbol], "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
