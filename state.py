@@ -11,6 +11,7 @@ usdt_start_deal_balance = {}
 half_quantity = {}
 usdt_deal_state = {}
 last_deal_open = {}
+deal = {'deal': 'No'}
 
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()

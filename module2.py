@@ -3,7 +3,7 @@ import pandas as pd
 import websockets
 import json
 from usdt_tickers import get_tickers, get_volume
-from state import pair_state, last_deal_time, last_deal_open
+from state import pair_state, last_deal_time, last_deal_open, deal
 from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
@@ -31,6 +31,9 @@ async def main_data(message):
             return None
 
         if open_price == last_deal_open[symbol]:
+            return None
+
+        if deal['deal'] == 'Yes':
             return None
 
         impulse = round(((price - open_price) / open_price) * 100, 4)
