@@ -1,5 +1,5 @@
 import pandas as pd
-from state import start_deal_price, deal_high, half_quantity
+from state import start_deal_price, deal_high
 from orders import sell_order
 
 

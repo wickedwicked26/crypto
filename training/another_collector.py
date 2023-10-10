@@ -18,9 +18,9 @@ def get_tickers():
 
 def get_compare(symbol):
     client = Client()
-    cur_time = datetime.strptime('2023-05-31 00:00:00', '%Y-%m-%d %H:%M:%S')
+    cur_time = datetime.strptime('2023-09-14 00:00:00', '%Y-%m-%d %H:%M:%S')
 
-    old_time = (cur_time - timedelta(days=30))
+    old_time = (cur_time - timedelta(days=13))
 
     start_time = old_time.strftime('%Y-%m-%d %H:%M')
     fin_time = cur_time.strftime('%Y-%m-%d %H:%M')
@@ -44,7 +44,7 @@ def get_compare(symbol):
     dataframe['symbol'] = symbol
     roc = price.pct_change() * 100
     dataframe['roc'] = roc
-    new_dataframe = dataframe.loc[dataframe['roc'] > 10]
+    new_dataframe = dataframe.loc[dataframe['roc'] > 3]
 
     print(f'{len(new_dataframe)} impulses for {symbol}')
 
@@ -54,12 +54,12 @@ def get_compare(symbol):
             print(f'[INFO] {symbol} without impulse')
             break
 
-        price = (row['open'] * 0.1) + row['open']
+        price = (row['open'] * 0.3) + row['open']
 
         end_time = row['timestamp']
         candle = client.get_historical_klines(symbol=symbol,
                                               interval='3m',
-                                              start_str=f'{end_time - timedelta(hours=8)}',
+                                              start_str=f'{end_time - timedelta(hours=24)}',
                                               end_str=f'{end_time}')
         df = pd.DataFrame(candle,
                           columns=['timestamp', 'open', 'high', 'low', 'close', 'volume', 'close_time',
@@ -93,7 +93,7 @@ def get_compare(symbol):
 
         range_of_day = round(((max_price - min_price) / min_price) * 100, 2)
 
-        if range_of_day > 6:
+        if range_of_day > 6.5:
             continue
 
         if max_price > price:
@@ -103,7 +103,7 @@ def get_compare(symbol):
 
         data = pd.DataFrame({'symbol': [symbol], 'timestamp': [end_time], 'price': [price]})
         result = pd.concat([result, data], ignore_index=True)
-        result.to_csv(f'/home/miguel/PycharmProjects/crypto/may/{symbol}_{end_time}.csv')
+        result.to_csv(f'/home/miguel/PycharmProjects/crypto/training/sep/{symbol}_{end_time}.csv')
         print(f'TIMESTAMP : {end_time + timedelta(hours=3)}',
               f'SYMBOL: {symbol}',
               f"IMPULSE : {row['roc']}",
@@ -112,7 +112,7 @@ def get_compare(symbol):
 
 
 def main():
-    ticks = get_tickers()[2:]
+    ticks = get_tickers()[5:]
     count = len(ticks)
     counter = 1
 

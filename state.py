@@ -9,7 +9,6 @@ tick_balance = {}
 deal_high = {}
 last_deal_time = {}
 usdt_start_deal_balance = {}
-half_quantity = {}
 last_deal_open = {}
 deal = {'deal': 'No'}
 
@@ -46,16 +45,15 @@ for item in data:
     if symbol.endswith("USDT"):
         tick_balance[symbol] = 0
 
-for item in data:
-    symbol = item["symbol"]
-    if symbol.endswith("USDT"):
-        half_quantity[symbol] = 'No'
 
 for item in data:
     symbol = item['symbol']
     if symbol.endswith("USDT"):
         last_deal_open[symbol] = 0
 
-usdt_balance['balance'] = float(client.get_asset_balance('USDT')['free'])
+for item in data:
+    symbol = item['symbol']
+    if symbol.endswith("USDT"):
+        usdt_start_deal_balance[symbol] = 0
 
-usdt_start_deal_balance['balance'] = 0
+

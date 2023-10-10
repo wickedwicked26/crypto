@@ -2,6 +2,7 @@ import asyncio
 import pandas as pd
 import websockets
 import json
+from error_logs import bot_error_logs
 from usdt_tickers import get_tickers
 from state import pair_state, last_deal_time, last_deal_open, deal
 from deal import state_tracker
@@ -21,6 +22,7 @@ async def main_data(message):
         open_price = float(df['k_o'][0])
         price = float(df['k_c'][0])
         volume = float(df['k_v'][0]) * float(df['k_c'][0])
+
         if pair_state[symbol] == 'Deal':
             state_tracker(symbol, price, volume, timestamp)
             return None
@@ -46,11 +48,12 @@ async def main_data(message):
 
 async def candle_stick_data(ticker):
     url = "wss://stream.binance.com:9443/ws/"  # steam address
-    # if ticks[0].split('@')[-1] == 'kline_3m':
     first_pair = "xprusdt@kline_3m"  # first pair
-    # first_pair = "xprusdt@ticker"  # first pair
     async for sock in websockets.connect(url + first_pair):
-        send_connection_res(f'МОДУЛЬ 1 ЗАПУЩЕН')
+        for key, value in pair_state.items():
+            if value == 'Deal':
+                send_error(f'OPEN DEAL WAS FOUND IN MODULE 1 : {key}')
+        send_connection_res(f'MODULE 1 WAS STARTED')
 
         try:
             pairs = {'method': 'SUBSCRIBE', 'params': ticker, 'id': 1}  # other pairs
@@ -63,18 +66,30 @@ async def candle_stick_data(ticker):
                 await main_data(resp)
 
         except websockets.ConnectionClosed as e:
-            print(e)
+            bot_error_logs(f'{e}')
 
 
 async def main():
-    # await asyncio.gather(candle_stick_data(ticks), candle_stick_data(ticks1))
     await candle_stick_data(ticks)
 
 
 if __name__ == '__main__':
     try:
+        with open('active_trades.txt', 'r+') as file:
+            for line in file:
+                symbol = line.strip()
+                pair_state[symbol] = 'Deal'
+            file.seek(0)
+            file.truncate()
 
         asyncio.run(main())
+
     except Exception as exp:
-        print(exp)
-        send_error(f'ВОЗНИКЛА ОШИБКА В МОДУЛЕ 1: {exp}. МОДУЛЬ ОСТАНОВЛЕН.')
+
+        send_error(f'EXCEPTION IN MODULE 1: {exp}. MODULE WAS STOPPED.')
+
+        with open('active_trades.txt', 'w') as file:
+            for key, value in pair_state.items():
+                if value == 'Deal':
+                    file.write(key + '\n')
+        bot_error_logs(exp)

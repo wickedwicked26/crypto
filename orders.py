@@ -1,7 +1,7 @@
 import csv
 from datetime import timedelta, datetime
 import requests
-from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, half_quantity, \
+from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, \
     usdt_start_deal_balance, deal, usdt_balance
 from telegram_message import send_message
 from config import client
@@ -10,14 +10,15 @@ from binance.helpers import round_step_size
 
 
 def buy_order(symbol, price, timestamp):
-
-    usdt_bal = usdt_balance['balance']
+    usdt_bal = float(client.get_asset_balance('USDT')['free'])
+    if usdt_bal < 20:
+        return None
     total_amount_usd = 0
     if usdt_bal >= 1_000:
         total_amount_usd = 1_000
     else:
         total_amount_usd = usdt_bal
-    usdt_start_deal_balance['balance'] = total_amount_usd
+    usdt_start_deal_balance[symbol] = total_amount_usd
 
     order = client.order_market_buy(
         symbol=symbol,
@@ -62,7 +63,7 @@ def sell_order(symbol, price, timestamp):
     )
 
     final_balance = float(order['cummulativeQuoteQty'])
-    start_balance = usdt_start_deal_balance['balance']
+    start_balance = usdt_start_deal_balance[symbol]
     usdt_change = round(((final_balance - start_balance) / start_balance) * 100, 4)
     send_message(f'{symbol} : DEAL FINISHED\n'
                  f'USDT CHANGE : {usdt_change}%\n'
@@ -84,13 +85,13 @@ def sell_order(symbol, price, timestamp):
 
     deal['deal'] = 'No'
     pair_state[symbol] = 'Not in deal'
-    half_quantity[symbol] = 'No'
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
     last_deal_time[symbol] = timestamp
     tick_balance[symbol] = 0
-    usdt_start_deal_balance['balance'] = 0
+    usdt_start_deal_balance[symbol] = 0
     deal_high[symbol] = 0
     usdt_balance['balance'] = float(client.get_asset_balance('USDT')['free'])
+
 
 
