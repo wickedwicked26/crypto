@@ -1,23 +1,26 @@
 import csv
 from datetime import timedelta, datetime
 import requests
+
+from period import period_data, current_open
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, \
-    usdt_start_deal_balance, deal, usdt_balance
+    usdt_start_deal_balance, deal
 from telegram_message import send_message
 from config import client
 from decimal import Decimal
 from binance.helpers import round_step_size
+from state import usdt_balance
 
 
 def buy_order(symbol, price, timestamp):
-    usdt_bal = float(client.get_asset_balance('USDT')['free'])
-    if usdt_bal < 20:
+    usdt_bal = usdt_balance['symbol']
+    if usdt_bal < 10:
         return None
-    total_amount_usd = 0
-    if usdt_bal >= 1_000:
-        total_amount_usd = 1_000
-    else:
-        total_amount_usd = usdt_bal
+    total_amount_usd = 10
+    # if usdt_bal >= 1_000:
+    #     total_amount_usd = 1_000
+    # else:
+    #     total_amount_usd = usdt_bal
     usdt_start_deal_balance[symbol] = total_amount_usd
 
     order = client.order_market_buy(
@@ -27,9 +30,10 @@ def buy_order(symbol, price, timestamp):
 
     symb_balance = Decimal(client.get_asset_balance(f'{symbol[:-4]}')['free'])
     tick_balance[symbol] = symb_balance
+    usdt_start_deal_balance[symbol] = total_amount_usd
 
-    deal['deal'] = 'Yes'
-    pair_state[symbol] = 'Deal'
+    deal['deal'] = True
+    pair_state[symbol] = True
     start_deal_price[symbol] = price
     deal_time[symbol] = timestamp
     deal_high[symbol] = price
@@ -40,6 +44,7 @@ def buy_order(symbol, price, timestamp):
         f'{symbol} QUANTITY : {tick_balance[symbol]}\n'
         f'{total_amount_usd}$ DEAL\n'
     )
+    usdt_balance['symbol'] = float(client.get_asset_balance('USDT')['free'])
 
 
 def sell_order(symbol, price, timestamp):
@@ -83,15 +88,27 @@ def sell_order(symbol, price, timestamp):
             usdt_change
         ))
 
-    deal['deal'] = 'No'
-    pair_state[symbol] = 'Not in deal'
+    deal['deal'] = False
+    pair_state[symbol] = False
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
     last_deal_time[symbol] = timestamp
     tick_balance[symbol] = 0
     usdt_start_deal_balance[symbol] = 0
     deal_high[symbol] = 0
-    usdt_balance['balance'] = float(client.get_asset_balance('USDT')['free'])
+    usdt_balance['symbol'] = float(client.get_asset_balance('USDT')['free'])
+    period_data[symbol] = []
+    current_open[symbol] = 0
 
-
+start = datetime.now()
+symbol = 'BTCUSDT'
+url = f'https://api.binance.com/api/v1/exchangeInfo'
+response = requests.get(url)
+data = response.json()
+step_size = 0
+for symbol_info in data['symbols']:
+    if symbol_info['symbol'] == symbol:
+        for filter_item in symbol_info['filters']:
+            if filter_item['filterType'] == 'LOT_SIZE':
+                step_size = Decimal(filter_item['stepSize'])
 

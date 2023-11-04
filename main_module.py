@@ -1,10 +1,13 @@
 import asyncio
+from datetime import datetime, timedelta
 import pandas as pd
 import websockets
 import json
 from error_logs import bot_error_logs
 from usdt_tickers import get_tickers
-from state import pair_state, last_deal_time, last_deal_open, deal
+from state import pair_state, last_deal_time, last_deal_open, deal, start_deal_price, tick_balance
+
+from period import current_open, period_data
 from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
@@ -17,15 +20,31 @@ async def main_data(message):
         data = json.loads(message)
         df = pd.json_normalize(data, sep='_')
         df['E'] = pd.to_datetime(df['E'], unit='ms').dt.strftime('%Y-%m-%d %H:%M')
+
         timestamp = df['E'][0]
         symbol = df['s'][0]
-        open_price = float(df['k_o'][0])
         price = float(df['k_c'][0])
         volume = float(df['k_v'][0]) * float(df['k_c'][0])
+        open_price = float(df['k_o'][0])
 
-        if pair_state[symbol] == 'Deal':
-            state_tracker(symbol, price, volume, timestamp)
+        if pair_state[symbol]:
+            state_tracker(symbol, price, timestamp)
             return None
+
+        if current_open[symbol] == 0:
+            current_open[symbol] = open_price
+
+        if len(period_data[symbol]) >= 1:
+
+            if timestamp != period_data[symbol][-1][0]:
+                if open_price != period_data[symbol][-1][1]:
+                    period_data[symbol].append([timestamp, open_price])
+
+            if len(period_data[symbol]) > 3:
+                period_data[symbol].pop(0)
+                current_open[symbol] = period_data[symbol][0][-1]
+        else:
+            period_data[symbol].append([timestamp, open_price])
 
         if open_price == last_deal_open[symbol]:
             return None
@@ -33,12 +52,16 @@ async def main_data(message):
         if timestamp == last_deal_time[symbol]:
             return None
 
-        if deal['deal'] == 'Yes':
+        if deal['deal']:
             return None
 
-        impulse = round(((price - open_price) / open_price) * 100, 4)
+        impulse = round(((price - current_open[symbol]) / current_open[symbol]) * 100, 4)
 
-        if impulse > 9:
+        print(period_data[symbol])
+        print(current_open[symbol])
+        print(impulse)
+
+        if impulse >= 6:
             last_deal_open[symbol] = open_price
             day_data(timestamp, symbol, price)
 
@@ -48,7 +71,7 @@ async def main_data(message):
 
 async def candle_stick_data(ticker):
     url = "wss://stream.binance.com:9443/ws/"  # steam address
-    first_pair = "xprusdt@kline_3m"  # first pair
+    first_pair = "xprusdt@kline_1m"  # first pair
     async for sock in websockets.connect(url + first_pair):
         for key, value in pair_state.items():
             if value == 'Deal':
@@ -77,12 +100,17 @@ if __name__ == '__main__':
     try:
         with open('active_trades.txt', 'r+') as file:
             for line in file:
-                symbol = line.strip()
+                line = line.strip()
+                symbol = line.split(' ')[0]
+                start_deal_price[symbol] = float(line.split(' ')[1])
+                tick_balance[symbol] = float(line.split(' ')[-1])
                 pair_state[symbol] = 'Deal'
             file.seek(0)
             file.truncate()
 
         asyncio.run(main())
+
+
 
     except Exception as exp:
 
@@ -91,5 +119,6 @@ if __name__ == '__main__':
         with open('active_trades.txt', 'w') as file:
             for key, value in pair_state.items():
                 if value == 'Deal':
-                    file.write(key + '\n')
+                    file.write(key + ' ' + f'{start_deal_price[key]}' + ' ' + f'{tick_balance[key]}' + '\n')
+
         bot_error_logs(exp)
