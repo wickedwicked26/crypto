@@ -2,7 +2,7 @@ import csv
 from datetime import timedelta, datetime
 import requests
 
-from period import period_data, current_open
+from period import period_data, current_open, previous_close
 from state import pair_state, start_deal_price, deal_time, tick_balance, last_deal_time, deal_high, \
     usdt_start_deal_balance, deal
 from telegram_message import send_message
@@ -99,16 +99,5 @@ def sell_order(symbol, price, timestamp):
     usdt_balance['symbol'] = float(client.get_asset_balance('USDT')['free'])
     period_data[symbol] = []
     current_open[symbol] = 0
-
-start = datetime.now()
-symbol = 'BTCUSDT'
-url = f'https://api.binance.com/api/v1/exchangeInfo'
-response = requests.get(url)
-data = response.json()
-step_size = 0
-for symbol_info in data['symbols']:
-    if symbol_info['symbol'] == symbol:
-        for filter_item in symbol_info['filters']:
-            if filter_item['filterType'] == 'LOT_SIZE':
-                step_size = Decimal(filter_item['stepSize'])
+    previous_close[symbol] = 0
 

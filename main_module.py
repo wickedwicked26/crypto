@@ -7,12 +7,12 @@ from error_logs import bot_error_logs
 from usdt_tickers import get_tickers
 from state import pair_state, last_deal_time, last_deal_open, deal, start_deal_price, tick_balance
 
-from period import current_open, period_data
+from period import current_open, period_data, previous_close
 from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
 
-ticks = get_tickers()[2:302]
+ticks = get_tickers()[302:]
 
 
 async def main_data(message):
@@ -31,6 +31,15 @@ async def main_data(message):
             state_tracker(symbol, price, timestamp)
             return None
 
+        if timestamp == last_deal_time[symbol]:
+            return None
+
+        if deal['deal']:
+            return None
+
+        if previous_close[symbol] == 0:
+            previous_close[symbol] = price
+
         if current_open[symbol] == 0:
             current_open[symbol] = open_price
 
@@ -46,25 +55,14 @@ async def main_data(message):
         else:
             period_data[symbol].append([timestamp, open_price])
 
-        if open_price == last_deal_open[symbol]:
-            return None
-
-        if timestamp == last_deal_time[symbol]:
-            return None
-
-        if deal['deal']:
-            return None
-
         impulse = round(((price - current_open[symbol]) / current_open[symbol]) * 100, 4)
-
-        print(period_data[symbol])
-        print(current_open[symbol])
-        print(impulse)
+        range_of_price = ((price - previous_close[symbol]) / previous_close[symbol]) * 100
 
         if impulse >= 6:
-            last_deal_open[symbol] = open_price
-            day_data(timestamp, symbol, price)
-
+            if range_of_price < 6:
+                last_deal_open[symbol] = open_price
+                day_data(timestamp, symbol, price)
+        previous_close[symbol] = price
     except KeyError:
         pass
 
