@@ -31,12 +31,6 @@ async def main_data(message):
             state_tracker(symbol, price, timestamp)
             return None
 
-        if timestamp == last_deal_time[symbol]:
-            return None
-
-        if deal['deal']:
-            return None
-
         if previous_close[symbol] == 0:
             previous_close[symbol] = price
 
@@ -58,9 +52,18 @@ async def main_data(message):
         impulse = round(((price - current_open[symbol]) / current_open[symbol]) * 100, 4)
         range_of_price = ((price - previous_close[symbol]) / previous_close[symbol]) * 100
 
+        if timestamp == last_deal_time[symbol]:
+            return None
+
+        if deal['deal']:
+            return None
+
+        if last_deal_open[symbol] == current_open[symbol]:
+            return None
+
         if impulse >= 6:
             if range_of_price < 6:
-                last_deal_open[symbol] = open_price
+                last_deal_open[symbol] = current_open[symbol]
                 day_data(timestamp, symbol, price)
         previous_close[symbol] = price
     except KeyError:

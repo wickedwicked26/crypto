@@ -9,14 +9,14 @@ from telegram_message import send_message
 from config import client
 from decimal import Decimal
 from binance.helpers import round_step_size
-from state import usdt_balance
+from state import usdt_balance, step_size
 
 
 def buy_order(symbol, price, timestamp):
     usdt_bal = usdt_balance['symbol']
-    if usdt_bal < 10:
+    if usdt_bal < 50:
         return None
-    total_amount_usd = 10
+    total_amount_usd = 50
     # if usdt_bal >= 1_000:
     #     total_amount_usd = 1_000
     # else:
@@ -32,13 +32,17 @@ def buy_order(symbol, price, timestamp):
     tick_balance[symbol] = symb_balance
     usdt_start_deal_balance[symbol] = total_amount_usd
 
+    step_size[symbol] = get_step_size(symbol)
+
     deal['deal'] = True
     pair_state[symbol] = True
     start_deal_price[symbol] = price
     deal_time[symbol] = timestamp
     deal_high[symbol] = price
+
     send_message(
         f'{symbol} : DEAL STARTED\n'
+        f'PERIOD OPEN PRICE : {current_open[symbol]}'
         f'PRICE : {price}\n'
         f'TIMESTAMP: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
         f'{symbol} QUANTITY : {tick_balance[symbol]}\n'
@@ -49,18 +53,10 @@ def buy_order(symbol, price, timestamp):
 
 def sell_order(symbol, price, timestamp):
     symb_balance = tick_balance[symbol]
-    step_size = 0
-    url = f'https://api.binance.com/api/v1/exchangeInfo'
-    response = requests.get(url)
-    data = response.json()
-    step_size = 0
-    for symbol_info in data['symbols']:
-        if symbol_info['symbol'] == symbol:
-            for filter_item in symbol_info['filters']:
-                if filter_item['filterType'] == 'LOT_SIZE':
-                    step_size = Decimal(filter_item['stepSize'])
 
-    quantity = round_step_size(symb_balance, step_size)
+    step_size_ = step_size[symbol]
+
+    quantity = round_step_size(symb_balance, step_size_)
 
     order = client.order_market_sell(
         symbol=symbol,
@@ -101,3 +97,15 @@ def sell_order(symbol, price, timestamp):
     current_open[symbol] = 0
     previous_close[symbol] = 0
 
+
+def get_step_size(symbol):
+    url = f'https://api.binance.com/api/v1/exchangeInfo'
+    response = requests.get(url)
+    data = response.json()
+    size = 0
+    for symbol_info in data['symbols']:
+        if symbol_info['symbol'] == symbol:
+            for filter_item in symbol_info['filters']:
+                if filter_item['filterType'] == 'LOT_SIZE':
+                    size = Decimal(filter_item['stepSize'])
+    return size

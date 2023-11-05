@@ -12,6 +12,8 @@ usdt_start_deal_balance = {}
 last_deal_open = {}
 deal = {'deal': False}
 usdt_balance = {}
+step_size = {}
+
 response = requests.get('https://api.binance.com/api/v3/ticker/price')
 data = response.json()
 
@@ -54,5 +56,11 @@ for item in data:
     symbol = item['symbol']
     if symbol.endswith("USDT"):
         usdt_start_deal_balance[symbol] = 0
+
+for item in data:
+    symbol = item['symbol']
+    if symbol.endswith("USDT"):
+        step_size[symbol] = 0
+
 
 usdt_balance['symbol'] = float(client.get_asset_balance('USDT')['free'])
