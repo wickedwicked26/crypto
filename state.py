@@ -62,5 +62,4 @@ for item in data:
     if symbol.endswith("USDT"):
         step_size[symbol] = 0
 
-
 usdt_balance['symbol'] = float(client.get_asset_balance('USDT')['free'])

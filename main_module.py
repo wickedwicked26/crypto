@@ -46,6 +46,7 @@ async def main_data(message):
             if len(period_data[symbol]) > 3:
                 period_data[symbol].pop(0)
                 current_open[symbol] = period_data[symbol][0][-1]
+
         else:
             period_data[symbol].append([timestamp, open_price])
 

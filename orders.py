@@ -73,6 +73,7 @@ def sell_order(symbol, price, timestamp):
                  f'DEAL START : {datetime.strptime(deal_time[symbol], "%Y-%m-%d %H:%M") + timedelta(hours=3)}\n'
                  f'DEAL FINISHED: {datetime.strptime(timestamp, "%Y-%m-%d %H:%M") + timedelta(hours=3)}'
                  )
+
     with open('data_base.csv', 'a') as file:
         writer = csv.writer(file)
         writer.writerow((
