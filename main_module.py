@@ -7,12 +7,12 @@ from error_logs import bot_error_logs
 from usdt_tickers import get_tickers
 from state import pair_state, last_deal_time, last_deal_open, deal, start_deal_price, tick_balance
 
-from period import current_open, period_data, previous_close
+from period import current_open, period_data, previous_close, period_price_range, period_end
 from deal import state_tracker
 from telegram_message import send_error, send_connection_res
 from day_data import day_data
 
-ticks = get_tickers()[302:]
+ticks = get_tickers()[:1]
 
 
 async def main_data(message):
@@ -24,12 +24,17 @@ async def main_data(message):
         timestamp = df['E'][0]
         symbol = df['s'][0]
         price = float(df['k_c'][0])
-        volume = float(df['k_v'][0]) * float(df['k_c'][0])
         open_price = float(df['k_o'][0])
+
+        timedelta_timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
 
         if pair_state[symbol]:
             state_tracker(symbol, price, timestamp)
             return None
+
+        if last_deal_time[symbol] != 0:
+            if timedelta_timestamp < last_deal_time[symbol] + timedelta(hours=3):
+                return None
 
         if previous_close[symbol] == 0:
             previous_close[symbol] = price
@@ -37,7 +42,11 @@ async def main_data(message):
         if current_open[symbol] == 0:
             current_open[symbol] = open_price
 
+        range_of_price = ((price - previous_close[symbol]) / previous_close[symbol]) * 100
+
         if len(period_data[symbol]) >= 1:
+
+            period_price_range[symbol].append(range_of_price)
 
             if timestamp != period_data[symbol][-1][0]:
                 if open_price != period_data[symbol][-1][1]:
@@ -46,12 +55,13 @@ async def main_data(message):
             if len(period_data[symbol]) > 3:
                 period_data[symbol].pop(0)
                 current_open[symbol] = period_data[symbol][0][-1]
-
+                period_end[symbol] = True
         else:
             period_data[symbol].append([timestamp, open_price])
+            period_price_range[symbol].append(range_of_price)
 
         impulse = round(((price - current_open[symbol]) / current_open[symbol]) * 100, 4)
-        range_of_price = ((price - previous_close[symbol]) / previous_close[symbol]) * 100
+        last_five_sec_range_sum = sum(period_price_range[symbol][-5:])
 
         if timestamp == last_deal_time[symbol]:
             return None
@@ -64,8 +74,14 @@ async def main_data(message):
 
         if impulse >= 6:
             if range_of_price < 6:
-                last_deal_open[symbol] = current_open[symbol]
-                day_data(timestamp, symbol, price)
+                if last_five_sec_range_sum < 6:
+                    last_deal_open[symbol] = current_open[symbol]
+                    day_data(timestamp, symbol, price)
+
+        if period_end[symbol]:
+            period_price_range[symbol] = period_price_range[symbol][-5:]
+            period_end[symbol] = False
+
         previous_close[symbol] = price
     except KeyError:
         pass
@@ -111,8 +127,6 @@ if __name__ == '__main__':
             file.truncate()
 
         asyncio.run(main())
-
-
 
     except Exception as exp:
 

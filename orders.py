@@ -85,11 +85,13 @@ def sell_order(symbol, price, timestamp):
             usdt_change
         ))
 
+    validate_timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
+
     deal['deal'] = False
     pair_state[symbol] = False
     start_deal_price[symbol] = 0
     deal_time[symbol] = 0
-    last_deal_time[symbol] = timestamp
+    last_deal_time[symbol] = validate_timestamp
     tick_balance[symbol] = 0
     usdt_start_deal_balance[symbol] = 0
     deal_high[symbol] = 0
@@ -109,4 +111,7 @@ def get_step_size(symbol):
             for filter_item in symbol_info['filters']:
                 if filter_item['filterType'] == 'LOT_SIZE':
                     size = Decimal(filter_item['stepSize'])
+                    break
     return size
+
+
