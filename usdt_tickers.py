@@ -8,19 +8,21 @@ def get_tickers():
     for item in data:
         symbol = item["symbol"]
         if symbol.endswith("USDT"):
+            if symbol == 'BTTCUSDT':
+                continue
             usdt_pairs.append(symbol.lower() + "@kline_1m")
 
     return usdt_pairs
 
 
-def get_volume():
+def get_ticks():
     response = requests.get('https://api.binance.com/api/v3/ticker/price')
     data = response.json()
-    usdt_pairs_volume = []
+    usdt_ticks = []
     for item in data:
         symbol = item["symbol"]
         if symbol.endswith("USDT"):
-            usdt_pairs_volume.append(symbol.lower() + "@ticker")
+            usdt_ticks.append(symbol.lower() + "@ticker")
 
-    return usdt_pairs_volume
+    return usdt_ticks
 

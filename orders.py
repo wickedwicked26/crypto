@@ -113,5 +113,3 @@ def get_step_size(symbol):
                     size = Decimal(filter_item['stepSize'])
                     break
     return size
-
-

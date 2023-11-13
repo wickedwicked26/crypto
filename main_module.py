@@ -4,7 +4,7 @@ import pandas as pd
 import websockets
 import json
 from error_logs import bot_error_logs
-from usdt_tickers import get_tickers
+from usdt_tickers import get_tickers, get_ticks
 from state import pair_state, last_deal_time, last_deal_open, deal, start_deal_price, tick_balance
 
 from period import current_open, period_data, previous_close, period_price_range, period_end
@@ -20,12 +20,11 @@ async def main_data(message):
         data = json.loads(message)
         df = pd.json_normalize(data, sep='_')
         df['E'] = pd.to_datetime(df['E'], unit='ms').dt.strftime('%Y-%m-%d %H:%M')
-
+        print(df['E'])
         timestamp = df['E'][0]
         symbol = df['s'][0]
         price = float(df['k_c'][0])
         open_price = float(df['k_o'][0])
-
         timedelta_timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
 
         if pair_state[symbol]:
@@ -49,7 +48,9 @@ async def main_data(message):
             period_price_range[symbol].append(range_of_price)
 
             if timestamp != period_data[symbol][-1][0]:
+
                 if open_price != period_data[symbol][-1][1]:
+
                     period_data[symbol].append([timestamp, open_price])
 
             if len(period_data[symbol]) > 3:
@@ -61,6 +62,7 @@ async def main_data(message):
             period_price_range[symbol].append(range_of_price)
 
         impulse = round(((price - current_open[symbol]) / current_open[symbol]) * 100, 4)
+
         last_five_sec_range_sum = sum(period_price_range[symbol][-5:])
 
         if timestamp == last_deal_time[symbol]:
@@ -72,11 +74,12 @@ async def main_data(message):
         if last_deal_open[symbol] == current_open[symbol]:
             return None
 
-        if impulse >= 6:
-            if range_of_price < 6:
-                if last_five_sec_range_sum < 6:
-                    last_deal_open[symbol] = current_open[symbol]
-                    day_data(timestamp, symbol, price)
+        if impulse >= 3:
+            if range_of_price < 3:
+            #     if last_five_sec_range_sum < 6:
+                last_deal_open[symbol] = current_open[symbol]
+
+                day_data(timestamp, symbol, price)
 
         if period_end[symbol]:
             period_price_range[symbol] = period_price_range[symbol][-5:]
@@ -90,6 +93,7 @@ async def main_data(message):
 async def candle_stick_data(ticker):
     url = "wss://stream.binance.com:9443/ws/"  # steam address
     first_pair = "xprusdt@kline_1m"  # first pair
+
     async for sock in websockets.connect(url + first_pair):
         for key, value in pair_state.items():
             if value == 'Deal':
